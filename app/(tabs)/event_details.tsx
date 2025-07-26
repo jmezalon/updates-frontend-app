@@ -77,7 +77,7 @@ export default function EventDetailScreen() {
     
     try {
       // For development, use localhost. In production, replace with your actual domain
-      const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://your-production-domain.com';
+      const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://updates-backend-api-beebc8cc747c.herokuapp.com';
       const shareUrl = `${baseUrl}/events/${event.id}`;
       const shareMessage = `Check out this event: ${event.title}`;
       

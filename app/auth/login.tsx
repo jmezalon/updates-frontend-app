@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
 const ADMIN_PORTAL_URL = 'http://localhost:5173';
 
 export default function LoginScreen() {

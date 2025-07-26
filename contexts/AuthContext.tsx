@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
 
 interface User {
   id: number;

@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useCallback } from 'react';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
 
 interface Church {
   id: number;
