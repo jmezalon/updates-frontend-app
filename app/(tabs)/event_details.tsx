@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Alert,
-  Linking,
-  Share,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { apiService, Event } from '@/services/api';
 import LikeButton from '@/components/LikeButton';
+import { apiService, Event } from '@/services/api';
+import { setGlobalSourceEventId } from '@/utils/navigationState';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  Image,
+  Linking,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -26,7 +27,16 @@ export default function EventDetailScreen() {
 
   const loadEventDetails = async () => {
     try {
-      const eventData = await apiService.getEventById(parseInt(id as string));
+      const eventId = parseInt(id as string);
+      if (isNaN(eventId) || !id) {
+        console.error('Invalid event ID:', id);
+        Alert.alert('Error', 'Invalid event ID. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Loading event details for ID:', eventId);
+      const eventData = await apiService.getEventById(eventId);
       setEvent(eventData);
     } catch (error) {
       console.error('Error loading event details:', error);
@@ -77,7 +87,7 @@ export default function EventDetailScreen() {
     
     try {
       // For development, use localhost. In production, replace with your actual domain
-      const baseUrl = __DEV__ ? 'http://localhost:3000' : 'https://updates-backend-api-beebc8cc747c.herokuapp.com';
+      const baseUrl = 'https://updates-backend-api-beebc8cc747c.herokuapp.com';
       const shareUrl = `${baseUrl}/events/${event.id}`;
       const shareMessage = `Check out this event: ${event.title}`;
       
@@ -144,7 +154,10 @@ export default function EventDetailScreen() {
 
         {/* Church Information */}
         <View style={styles.churchSection}>
-          <TouchableOpacity onPress={() => router.push(`/(tabs)/church/church_detail?id=${event.church_id}`)}>
+          <TouchableOpacity onPress={() => {
+            setGlobalSourceEventId(event.id.toString());
+            router.push(`/(tabs)/church/church_detail?id=${event.church_id}`);
+          }}>
             <Text style={[styles.churchName, styles.churchNameClickable]}>{event.church_name}</Text>
           </TouchableOpacity>
           {event.location && (
@@ -211,7 +224,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFB800',
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },

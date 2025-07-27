@@ -1,43 +1,41 @@
-import { Tabs, useRouter, usePathname } from 'expo-router';
-import React from 'react';
-import { Platform, View, Text } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { clearGlobalSourceEventId, getGlobalSourceEventId } from '@/utils/navigationState';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs, usePathname, useRouter } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { HapticTab } from '@/components/HapticTab';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
   const pathname = usePathname();
+
+  const { user } = useAuth();
 
   // Check if we're on the home screen
   const isOnHome = pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/';
 
-  const handleHomeBackPress = (e: any) => {
-    if (isOnHome) {
-      // On home screen, do nothing (normal home tab behavior)
-      return;
-    }
-    
-    // Not on home, prevent default and go back
-    e.preventDefault();
-    
+  const handleBackPress = () => {
     // Navigate based on current screen
     if (pathname.includes('/church/church_detail')) {
-      router.push('/(tabs)/event_details' as any);
+      const sourceEventId = getGlobalSourceEventId();
+      
+      if (sourceEventId) {
+        router.push(`/(tabs)/event_details?id=${sourceEventId}` as any);
+        clearGlobalSourceEventId(); // Clear the stored ID
+      } else {
+        // No source event, navigate to home
+        router.push('/(tabs)' as any);
+      }
     } else if (pathname.includes('/event_details')) {
       router.push('/(tabs)' as any);
     } else {
-      router.push('/(tabs)' as any);
+      router.back();
     }
   };
 
-  const { user } = useAuth();
-
   return (
+    <View style={styles.container}>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#FFB800',
@@ -52,19 +50,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: isOnHome ? 'Home' : 'Back',
+          title: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon 
-              name={isOnHome 
-                ? (focused ? 'home' : 'home-outline') 
-                : 'arrow-back'
-              } 
+              name={focused ? 'home' : 'home-outline'} 
               color={color} 
             />
           ),
-        }}
-        listeners={{
-          tabPress: handleHomeBackPress,
         }}
       />
       <Tabs.Screen
@@ -141,12 +133,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="church"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
         name="church/church_detail"
         options={{
           href: null, // Hide from tab bar
@@ -159,5 +145,49 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    
+    {/* Floating Back Button */}
+    {!isOnHome && (
+      <TouchableOpacity 
+        style={styles.floatingBackButton}
+        onPress={handleBackPress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.backButtonInner}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </View>
+      </TouchableOpacity>
+    )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  floatingBackButton: {
+    position: 'absolute',
+    bottom: 100, // Above the tab bar
+    left: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFB800',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  backButtonInner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 28,
+  },
+});

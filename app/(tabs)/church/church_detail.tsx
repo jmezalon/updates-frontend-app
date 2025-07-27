@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Alert,
-  Linking,
-} from 'react-native';
+import FollowButton from '@/components/FollowButton';
+import { Announcement, apiService, Church, Donation, Event } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { apiService, Church, Event, Announcement, Donation } from '@/services/api';
-import FollowButton from '@/components/FollowButton';
+import { useEffect, useState } from 'react';
+import {
+    Alert,
+    Image,
+    Linking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 // Helper function to get payment method branding
 const getPaymentMethodBranding = (method: string) => {
@@ -67,6 +67,7 @@ export default function ChurchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const id = params.id as string;
+  const sourceEventId = params.sourceEventId as string;
   const [church, setChurch] = useState<Church | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -82,14 +83,30 @@ export default function ChurchScreen() {
   const loadChurchData = async () => {
     try {
       const churchId = parseInt(id as string);
+      console.log('Loading church data for ID:', churchId);
       
       // Load church details, events, announcements, weekly schedule, and donations in parallel
       const [churchData, eventsData, announcementsData, weeklyData, donationsData] = await Promise.all([
-        apiService.getChurch(churchId),
-        apiService.getEventsByChurch(churchId),
-        apiService.getAnnouncementsByChurch(churchId),
-        apiService.getWeeklyAnnouncementsByChurch(churchId),
-        apiService.getDonationsByChurch(churchId)
+        apiService.getChurch(churchId).catch(err => {
+          console.error('Failed to load church:', err);
+          throw err;
+        }),
+        apiService.getEventsByChurch(churchId).catch(err => {
+          console.error('Failed to load events:', err);
+          return [];
+        }),
+        apiService.getAnnouncementsByChurch(churchId).catch(err => {
+          console.error('Failed to load announcements:', err);
+          return [];
+        }),
+        apiService.getWeeklyAnnouncementsByChurch(churchId).catch(err => {
+          console.error('Failed to load weekly schedule:', err);
+          return [];
+        }),
+        apiService.getDonationsByChurch(churchId).catch(err => {
+          console.error('Failed to load donations:', err);
+          return [];
+        })
       ]);
 
       setChurch(churchData);
@@ -99,7 +116,7 @@ export default function ChurchScreen() {
       setDonations(donationsData);
     } catch (error) {
       console.error('Error loading church data:', error);
-      Alert.alert('Error', 'Failed to load church information');
+      Alert.alert('Error', 'Failed to load church information. The church may not exist or there may be a network issue.');
     } finally {
       setLoading(false);
     }
@@ -592,7 +609,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFB800',
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },

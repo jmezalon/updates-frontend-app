@@ -1,23 +1,23 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  RefreshControl,
-  Alert,
-  Modal,
-  TextInput,
-} from 'react-native';
+import { apiService, Event } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { apiService, Event } from '@/services/api';
-import { getCityCoordinates, calculateDistance, getZipCodeCoordinates } from '../../utils/locationUtils';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Image,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { calculateDistance, getCityCoordinates, getZipCodeCoordinates } from '../../utils/locationUtils';
 
 const USER_LOCATION_KEY = 'user_location';
 const FOLLOWED_CHURCHES_KEY = 'followed_churches';
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFB800',
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
