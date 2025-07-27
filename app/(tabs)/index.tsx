@@ -2,6 +2,7 @@ import { apiService, Event } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { getImageUrl } from '@/utils/imageUtils';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -391,7 +392,7 @@ export default function HomeScreen() {
       {event.image_url && (
         <TouchableOpacity onPress={() => handleEventPress(event.id)}>
           <Image
-            source={{ uri: event.image_url }}
+            source={{ uri: getImageUrl(event.image_url) }}
             style={styles.cardImage}
           />
         </TouchableOpacity>

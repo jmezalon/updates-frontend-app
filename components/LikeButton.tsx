@@ -56,15 +56,10 @@ export default function LikeButton({
   };
 
   const handlePress = async () => {
-    console.log('🔍 LikeButton Debug - Authentication State:');
-    console.log('  isAuthenticated:', isAuthenticated);
-    console.log('  token exists:', !!token);
-    console.log('  token length:', token?.length || 0);
-    console.log('  user exists:', !!user);
-    console.log('  user data:', user);
+
     
     if (!isAuthenticated) {
-      console.log('❌ Not authenticated, showing sign in alert');
+
       Alert.alert(
         'Sign In Required',
         'Please sign in to like events.',
@@ -74,13 +69,13 @@ export default function LikeButton({
     }
 
     if (!token) {
-      console.log('❌ No token available');
+
       return;
     }
 
     // Don't allow admins to like events
     if (user?.role !== 'user') {
-      console.log('❌ User role is not "user":', user?.role);
+
       Alert.alert(
         'Feature Not Available',
         'This feature is only available for regular users.',
@@ -89,7 +84,7 @@ export default function LikeButton({
       return;
     }
     
-    console.log('✅ All authentication checks passed, proceeding with like action...');
+
 
     setLoading(true);
     try {

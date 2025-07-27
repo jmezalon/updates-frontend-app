@@ -1,6 +1,7 @@
 import LikeButton from '@/components/LikeButton';
 import { apiService, Event } from '@/services/api';
 import { setGlobalSourceEventId } from '@/utils/navigationState';
+import { getImageUrl } from '@/utils/imageUtils';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -35,7 +36,7 @@ export default function EventDetailScreen() {
         return;
       }
       
-      console.log('Loading event details for ID:', eventId);
+
       const eventData = await apiService.getEventById(eventId);
       setEvent(eventData);
     } catch (error) {
@@ -99,7 +100,7 @@ export default function EventDetailScreen() {
       
       if (result.action === Share.sharedAction) {
         // Content was shared successfully
-        console.log('Event shared successfully');
+
       }
     } catch (error) {
       console.error('Error sharing event:', error);
@@ -133,7 +134,10 @@ export default function EventDetailScreen() {
 
         {/* Event Image */}
         {event.image_url && (
-          <Image source={{ uri: event.image_url }} style={styles.eventImage} />
+          <>
+
+            <Image source={{ uri: getImageUrl(event.image_url) }} style={styles.eventImage} />
+          </>
         )}
 
         {/* Event Title and Action Buttons */}

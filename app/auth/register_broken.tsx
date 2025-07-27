@@ -65,8 +65,7 @@ export default function RegisterScreen() {
     setError(null); // Clear previous errors
     setLoading(true);
     
-    console.log('🔄 Starting registration request to:', `${API_BASE_URL}/auth/register`);
-    console.log('📝 Form data:', { ...formData, password: '[HIDDEN]', confirmPassword: '[HIDDEN]' });
+
     
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -83,8 +82,7 @@ export default function RegisterScreen() {
       });
 
       const data = await response.json();
-      console.log('📨 Registration response status:', response.status);
-      console.log('📨 Registration response data:', data);
+
 
       if (response.ok) {
         Alert.alert(
@@ -99,9 +97,7 @@ export default function RegisterScreen() {
         );
       } else {
         const errorMessage = data.error || 'Registration failed';
-        console.log('❌ Registration failed, setting error:', errorMessage);
         setError(errorMessage);
-        console.log('🔴 Error state set to:', errorMessage);
         // Also show alert for immediate feedback
         Alert.alert('Registration Failed', errorMessage);
       }

@@ -1,17 +1,18 @@
 import FollowButton from '@/components/FollowButton';
 import { Announcement, apiService, Church, Donation, Event } from '@/services/api';
+import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 // Helper function to get payment method branding
@@ -83,7 +84,7 @@ export default function ChurchScreen() {
   const loadChurchData = async () => {
     try {
       const churchId = parseInt(id as string);
-      console.log('Loading church data for ID:', churchId);
+
       
       // Load church details, events, announcements, weekly schedule, and donations in parallel
       const [churchData, eventsData, announcementsData, weeklyData, donationsData] = await Promise.all([
@@ -255,7 +256,7 @@ export default function ChurchScreen() {
               <View style={styles.leadershipItem}>
                 {church.senior_pastor_avatar ? (
                   <Image 
-                    source={{ uri: church.senior_pastor_avatar }} 
+                    source={{ uri: getImageUrl(church.senior_pastor_avatar) }} 
                     style={styles.pastorAvatar}
                   />
                 ) : (
@@ -276,7 +277,7 @@ export default function ChurchScreen() {
               <View style={styles.leadershipItem}>
                 {church.pastor_avatar ? (
                   <Image 
-                    source={{ uri: church.pastor_avatar }} 
+                    source={{ uri: getImageUrl(church.pastor_avatar) }} 
                     style={styles.pastorAvatar}
                   />
                 ) : (
@@ -297,7 +298,7 @@ export default function ChurchScreen() {
               <View style={styles.leadershipItem}>
                 {church.assistant_pastor_avatar ? (
                   <Image 
-                    source={{ uri: church.assistant_pastor_avatar }} 
+                    source={{ uri: getImageUrl(church.assistant_pastor_avatar) }} 
                     style={styles.pastorAvatar}
                   />
                 ) : (
@@ -365,7 +366,7 @@ export default function ChurchScreen() {
                     {event.image_url && (
                       <View style={styles.reminderImageContainer}>
                         <Image 
-                          source={{ uri: event.image_url }} 
+                          source={{ uri: getImageUrl(event.image_url) }} 
                           style={styles.reminderImageSmall}
                           resizeMode="cover"
                         />
@@ -420,7 +421,7 @@ export default function ChurchScreen() {
                         {reminder.image_url && (
                           <View style={styles.reminderImageContainer}>
                             <Image 
-                              source={{ uri: reminder.image_url }} 
+                              source={{ uri: getImageUrl(reminder.image_url) }} 
                               style={styles.reminderImageSmall}
                               resizeMode="cover"
                             />
@@ -480,7 +481,7 @@ export default function ChurchScreen() {
                             // Expanded state: show only image
                             <View style={styles.scheduleImageOnlyContainer}>
                               <Image 
-                                source={{ uri: schedule.image_url }} 
+                                source={{ uri: getImageUrl(schedule.image_url) }} 
                                 style={styles.scheduleImageFullView}
                                 resizeMode="contain"
                               />
@@ -505,7 +506,7 @@ export default function ChurchScreen() {
                               {schedule.image_url && (
                                 <View style={styles.scheduleImageContainer}>
                                   <Image 
-                                    source={{ uri: schedule.image_url }} 
+                                    source={{ uri: getImageUrl(schedule.image_url) }} 
                                     style={styles.scheduleImageSmall}
                                     resizeMode="cover"
                                   />

@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
+import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -234,7 +235,7 @@ export default function ProfileScreen() {
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={handleImagePicker} style={styles.avatarContainer}>
           {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatar} />
+            <Image source={{ uri: getImageUrl(avatar) }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarInitial}>

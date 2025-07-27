@@ -55,15 +55,14 @@ export default function LoginScreen() {
     setError(null); // Clear previous errors
     setLoading(true);
     
-    console.log('🔄 Starting login with AuthContext...');
-    console.log('📝 Login data:', { email: formData.email, password: '[HIDDEN]' });
+
     
     try {
       // Use AuthContext login method
       const result = await login(formData.email.trim().toLowerCase(), formData.password);
 
       if (result.success && result.user) {
-        console.log('✅ Login successful:', result.user);
+
         
         // Check user role and redirect accordingly
         if (result.user.role === 'church_admin' || result.user.role === 'superuser') {
@@ -72,14 +71,12 @@ export default function LoginScreen() {
           setFormData({ email: '', password: '' });
         } else {
           // Regular users continue to the app - redirect to favorites
-          console.log('✅ Regular user login successful, routing to favorites...');
+
           router.replace('/(tabs)/favorites' as any);
         }
       } else {
         const errorMessage = result.error || 'Login failed';
-        console.log('❌ Login failed:', errorMessage);
         setError(errorMessage);
-        console.log('🔴 Error state set to:', errorMessage);
       }
     } catch (error) {
       console.error('Login error:', error);

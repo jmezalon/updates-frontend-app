@@ -67,8 +67,7 @@ export default function RegisterScreen() {
     setError(null); // Clear previous errors
     setLoading(true);
     
-    console.log('🔄 Starting registration request to:', `${API_BASE_URL}/auth/register`);
-    console.log('📝 Form data:', { ...formData, password: '[HIDDEN]', confirmPassword: '[HIDDEN]' });
+
     
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -85,21 +84,20 @@ export default function RegisterScreen() {
       });
 
       const data = await response.json();
-      console.log('📨 Registration response status:', response.status);
-      console.log('📨 Registration response data:', data);
+
 
       if (response.ok) {
-        console.log('✅ Registration successful, auto-authenticating user...');
+
         
         // Automatically authenticate the user with the returned token and user data
         const authResult = await authenticateWithToken(data.token, data.user);
         
         if (authResult.success) {
-          console.log('✅ Auto-authentication successful, routing to favorites...');
+
           // Directly route to favorites without blocking alert
           router.replace('/(tabs)/favorites' as any);
         } else {
-          console.log('❌ Auto-authentication failed, showing manual options...');
+
           Alert.alert(
             'Success',
             'Account created successfully! Please sign in.',
@@ -113,9 +111,7 @@ export default function RegisterScreen() {
         }
       } else {
         const errorMessage = data.error || 'Registration failed';
-        console.log('❌ Registration failed, setting error:', errorMessage);
         setError(errorMessage);
-        console.log('🔴 Error state set to:', errorMessage);
         // Also show alert for immediate feedback
         Alert.alert('Registration Failed', errorMessage);
       }
