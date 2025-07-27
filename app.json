@@ -1,22 +1,40 @@
 {
   "expo": {
-    "name": "updates-frontend",
-    "slug": "updates-frontend",
+    "name": "Updates",
+    "slug": "updates-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "updatesfrontend",
+    "scheme": "updates",
     "userInterfaceStyle": "automatic",
+    "description": "Discover church events, follow your favorite churches, and stay connected with your community.",
+    "privacy": "public",
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.updates.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to upload event images and profile photos.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload event images and profile photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFB800"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.updates.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +55,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "10c8aa3d-609e-41f4-9ea9-2cbcb16a1dce"
+      }
     }
   }
 }
