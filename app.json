@@ -11,7 +11,8 @@
     "privacy": "public",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "newArchEnabled": true,
     "ios": {
