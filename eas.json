@@ -16,6 +16,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "jmezalon@mezalonmax.com",
+        "appleTeamId": "6749280219",
+        "appleTeamId": "9S7UVPFSUT"
+      }
+    }
   }
 }

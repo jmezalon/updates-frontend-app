@@ -22,6 +22,10 @@
         "NSCameraUsageDescription": "This app uses the camera to upload event images and profile photos.",
         "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload event images and profile photos.",
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": {
+        "dark": "./assets/images/adaptive-icon.png",
+        "light": "./assets/images/icon.png"
       }
     },
     "android": {
