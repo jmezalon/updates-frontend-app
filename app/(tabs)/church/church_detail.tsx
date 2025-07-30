@@ -146,33 +146,75 @@ export default function ChurchScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid date';
+      }
+      // Explicitly convert UTC to local date and format
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone // Ensure local timezone
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, 'for dateString:', dateString);
+      return dateString; // Return original string on error
+    }
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid time';
+      }
+      // Explicitly convert UTC to local time and format
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone // Ensure local timezone
+      });
+    } catch (error) {
+      console.error('Error formatting time:', error, 'for dateString:', dateString);
+      return dateString; // Return original string on error
+    }
   };
 
   const formatScheduleTime = (timeString: string) => {
-    // Handle time strings like "09:00" or "2:00 PM"
-    if (timeString.includes(':')) {
-      const [hours, minutes] = timeString.split(':');
-      const hour = parseInt(hours);
-      const minute = minutes.replace(/[^0-9]/g, ''); // Remove non-numeric characters
-      const isPM = timeString.toLowerCase().includes('pm') || hour >= 12;
-      const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
-      return `${displayHour}:${minute.padStart(2, '0')} ${isPM ? 'PM' : 'AM'}`;
+    try {
+      // Check if it's an ISO datetime string (contains 'T' and 'Z')
+      if (timeString.includes('T') && (timeString.includes('Z') || timeString.includes('+') || timeString.includes('-'))) {
+        const date = new Date(timeString);
+        if (isNaN(date.getTime())) {
+          return timeString; // Return original if invalid date
+        }
+        // Format to local time as hh:mm AM/PM
+        return date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+      
+      // Handle simple time strings like "09:00" or "2:00 PM"
+      if (timeString.includes(':')) {
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours);
+        const minute = minutes.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+        const isPM = timeString.toLowerCase().includes('pm') || hour >= 12;
+        const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+        return `${displayHour}:${minute.padStart(2, '0')} ${isPM ? 'PM' : 'AM'}`;
+      }
+      
+      return timeString; // Return as-is if not in expected format
+    } catch (error) {
+      console.error('Error formatting schedule time:', error);
+      return timeString; // Return original string on error
     }
-    return timeString; // Return as-is if not in expected format
   };
 
   const getDayName = (day?: number) => {
