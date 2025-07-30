@@ -3,14 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  Image,
+  Linking,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const RECENT_SEARCHES_KEY = 'recent_church_searches';
@@ -185,6 +186,19 @@ export default function SearchScreen() {
         </View>
       ) : showRecentSearches ? (
         <View style={styles.recentSearchesContainer}>
+          {/* Enrollment Message */}
+          <View style={styles.enrollmentMessageContainer}>
+            <Text style={styles.enrollmentMessage}>
+              Can't find your church? Find out how to enroll your church on Updates {' '}
+              <Text 
+                style={styles.enrollmentLink}
+                onPress={() => Linking.openURL('https://churchupdates.netlify.app')}
+              >
+                here
+              </Text>
+            </Text>
+          </View>
+          
           <View style={styles.recentSearchesHeader}>
             <Text style={styles.recentSearchesTitle}>Recent Searches</Text>
             {recentSearches.length > 0 && (
@@ -217,12 +231,25 @@ export default function SearchScreen() {
           )}
         </View>
       ) : filteredChurches.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No Results Found</Text>
-          <Text style={styles.emptyDescription}>
-            No churches found matching "{searchQuery}". Try a different search term.
-          </Text>
-        </View>
+        <>
+          <View style={styles.enrollmentMessageContainer}>
+            <Text style={styles.enrollmentMessage}>
+              Can't find your church? Find out how to enroll your church on Updates {' '}
+              <Text 
+                style={styles.enrollmentLink}
+                onPress={() => Linking.openURL('https://churchupdates.netlify.app')}
+                >
+                here
+              </Text>
+            </Text>
+          </View>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>No Results Found</Text>
+            <Text style={styles.emptyDescription}>
+              No churches found matching "{searchQuery}". Try a different search term.
+            </Text>
+          </View>
+        </>
       ) : (
         <FlatList
           data={filteredChurches}
@@ -374,5 +401,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  enrollmentMessageContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  enrollmentMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  enrollmentLink: {
+    color: '#e74c3c',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

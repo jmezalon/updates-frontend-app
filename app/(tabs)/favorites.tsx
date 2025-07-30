@@ -33,8 +33,8 @@ interface Event {
   id: number;
   title: string;
   description?: string;
-  event_date: string;
-  event_time?: string;
+  start_datetime: string;
+  end_datetime?: string;
   location?: string;
   image_url?: string;
   church_name: string;
@@ -66,6 +66,50 @@ function FavoritesContent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Format date and time functions (matching church_detail.tsx)
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) {
+      return 'No date';
+    }
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.log('Invalid date string:', dateString);
+        return 'No date';
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'No date';
+    }
+  };
+
+  const formatTime = (dateString: string | null | undefined) => {
+    if (!dateString) {
+      return 'No time';
+    }
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.log('Invalid time string:', dateString);
+        return 'No time';
+      }
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+    } catch (error) {
+      console.error('Error formatting time:', error, dateString);
+      return 'No time';
+    }
+  };
+
   const fetchFavorites = async () => {
     if (!token) return;
 
@@ -78,6 +122,10 @@ function FavoritesContent() {
 
       if (response.ok) {
         const data = await response.json();
+        // Debug: Log the first event to see its structure
+        if (data.likedEvents && data.likedEvents.length > 0) {
+          console.log('First liked event structure:', data.likedEvents[0]);
+        }
         setFavorites(data);
       } else {
         console.error('Failed to fetch favorites');
@@ -237,8 +285,8 @@ function FavoritesContent() {
                     <Text style={styles.eventTitle}>{event.title}</Text>
                     <Text style={styles.eventChurch}>{event.church_name}</Text>
                     <Text style={styles.eventDate}>
-                      {new Date(event.event_date).toLocaleDateString()}
-                      {event.event_time && ` • ${event.event_time}`}
+                      {formatDate(event.start_datetime)}
+                      {event.start_datetime && ` • ${formatTime(event.start_datetime)}`}
                     </Text>
                     {event.location && (
                       <Text style={styles.eventLocation}>{event.location}</Text>
