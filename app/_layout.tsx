@@ -30,14 +30,14 @@ export default function RootLayout() {
         <meta property="og:url" content="https://mychurchupdates.netlify.app/" />
         <meta property="og:title" content="Connect with your churches on Updates" />
         <meta property="og:description" content="Discover church events, follow your favorite churches, and stay connected with your community." />
-        <meta property="og:image" content="https://res.cloudinary.com/dasjawxzd/image/upload/v1754001953/social-share_cmtwv4.png" />
+        <meta property="og:image" content="https://res.cloudinary.com/dasjawxzd/image/upload/v1754002258/share-image_fqcj0z.png" />
         
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://mychurchupdates.netlify.app/" />
         <meta property="twitter:title" content="Connect with your churches on Updates" />
         <meta property="twitter:description" content="Discover church events, follow your favorite churches, and stay connected with your community." />
-        <meta property="twitter:image" content="https://res.cloudinary.com/dasjawxzd/image/upload/v1754001953/social-share_cmtwv4.png" />
+        <meta property="twitter:image" content="https://res.cloudinary.com/dasjawxzd/image/upload/v1754002258/share-image_fqcj0z.png" />
       </Head>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
