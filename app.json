@@ -53,7 +53,21 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "meta": {
+        "title": "Connect with your churches on Updates",
+        "description": "Discover church events, follow your favorite churches, and stay connected with your community.",
+        "image": "./assets/images/social-share.png",
+        "og:title": "Connect with your churches on Updates",
+        "og:description": "Discover church events, follow your favorite churches, and stay connected with your community.",
+        "og:image": "./assets/images/social-share.png",
+        "og:type": "website",
+        "og:url": "https://mychurchupdates.netlify.app",
+        "twitter:card": "summary_large_image",
+        "twitter:title": "Connect with your churches on Updates",
+        "twitter:description": "Discover church events, follow your favorite churches, and stay connected with your community.",
+        "twitter:image": "./assets/images/social-share.png"
+      }
     },
     "plugins": [
       "expo-router",
