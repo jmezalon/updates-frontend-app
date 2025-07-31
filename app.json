@@ -15,13 +15,21 @@
       "web"
     ],
     "newArchEnabled": true,
+    "production": {
+      "autoIncrement": true
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mezalonmax.updates",
-      "buildNumber": "1",
+      "buildNumber": "1.0.1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to upload event images and profile photos.",
         "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload event images and profile photos.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to show nearby church events and personalize your experience.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to show nearby church events and personalize your experience.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "icon": {
