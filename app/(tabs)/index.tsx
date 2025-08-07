@@ -476,9 +476,18 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         )}
-        <View style={styles.likeContainer}>
-          <Ionicons name="heart" size={16} color="#ff4757" />
-          <Text style={styles.likeCount}>{(event.like_count || 0)} likes</Text>
+        <View style={styles.bottomRow}>
+          <View style={styles.likeContainer}>
+            <Ionicons name="heart" size={16} color="#ff4757" />
+            <Text style={styles.likeCount}>{(event.like_count || 0)} likes</Text>
+          </View>
+          {event.price !== undefined && (
+            <View style={styles.priceContainer}>
+              <Text style={styles.priceText}>
+                {parseFloat(event.price.toString()) === 0 ? 'Free' : `$${event.price}`}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -700,16 +709,29 @@ const styles = StyleSheet.create({
   locationContainer: {
     marginTop: 8,
   },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   likeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
   },
   likeCount: {
     fontSize: 12,
     color: '#666',
     marginLeft: 4,
     fontWeight: '500',
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
+  priceText: {
+    fontSize: 14,
+    color: '#e74c3c',
+    fontWeight: '600',
   },
   // Modal styles
   modalOverlay: {

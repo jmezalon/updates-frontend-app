@@ -180,7 +180,7 @@ export default function EventDetailScreen() {
             <>
               <Text style={styles.priceLabel}>Price:</Text>
               <Text style={styles.price}>
-                {event.price === 0 ? 'Free' : `$${event.price}`}
+                {parseFloat(event.price.toString()) === 0 ? 'Free' : `$${event.price}`}
               </Text>
             </>
           )}

@@ -291,9 +291,9 @@ export default function ChurchScreen() {
         {event.location && (
           <Text style={styles.eventLocation}>{event.location}</Text>
         )}
-        {event.price !== undefined && (
+        {event.price !== undefined && parseFloat(event.price.toString()) !== 0 && (
           <Text style={styles.eventPrice}>
-            {event.price === 0 ? 'Free' : `$${event.price}`}
+            ${event.price}
           </Text>
         )}
       </View>
