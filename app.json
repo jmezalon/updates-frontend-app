@@ -56,7 +56,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "origin": "https://mychurchupdates.netlify.app"
+        }
+      ],
       [
         "expo-splash-screen",
         {
