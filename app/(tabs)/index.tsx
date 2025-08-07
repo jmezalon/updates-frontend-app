@@ -535,7 +535,7 @@ export default function HomeScreen() {
             )}
           </>
         }
-        contentContainerStyle={styles.scrollView}
+        contentContainerStyle={styles.flatListContent}
       />
       
       {/* Location Setup Modal */}
@@ -610,6 +610,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  flatListContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
   },
