@@ -511,7 +511,7 @@ export default function HomeScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No events available</Text>
             <Text style={styles.emptySubtext}>
-              Make sure your backend server is running on localhost:3001
+              Make sure your backend server is running
             </Text>
             <Text style={styles.emptySubtext}>
               Debug: Events loaded: {events.length}, Personalized: {personalizedEvents.length}
