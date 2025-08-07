@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Linking,
+  View
 } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
 
-const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
-const ADMIN_PORTAL_URL = 'http://localhost:5173';
+
+const ADMIN_PORTAL_URL = 'http://localhost:3000';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -358,13 +357,7 @@ const styles = StyleSheet.create({
     padding: 24,
     margin: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    // Mobile-friendly shadow alternative
     elevation: 5,
   },
   adminIcon: {

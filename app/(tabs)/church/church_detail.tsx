@@ -12,7 +12,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 // Helper function to get payment method branding
@@ -68,7 +68,6 @@ export default function ChurchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const id = params.id as string;
-  const sourceEventId = params.sourceEventId as string;
   const [church, setChurch] = useState<Church | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -76,6 +75,13 @@ export default function ChurchScreen() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedAnnouncements, setExpandedAnnouncements] = useState<Set<number>>(new Set());
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  
+  // Lazy loading states for events
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsOffset, setEventsOffset] = useState(0);
+  const [hasMoreEvents, setHasMoreEvents] = useState(true);
+  const [eventsLimit] = useState(10);
 
   useEffect(() => {
     loadChurchData();
@@ -85,16 +91,11 @@ export default function ChurchScreen() {
     try {
       const churchId = parseInt(id as string);
 
-      
-      // Load church details, events, announcements, weekly schedule, and donations in parallel
-      const [churchData, eventsData, announcementsData, weeklyData, donationsData] = await Promise.all([
+      // Load church details, announcements, weekly schedule, and donations in parallel
+      const [churchData, announcementsData, weeklyData, donationsData] = await Promise.all([
         apiService.getChurch(churchId).catch(err => {
           console.error('Failed to load church:', err);
           throw err;
-        }),
-        apiService.getEventsByChurch(churchId).catch(err => {
-          console.error('Failed to load events:', err);
-          return [];
         }),
         apiService.getAnnouncementsByChurch(churchId).catch(err => {
           console.error('Failed to load announcements:', err);
@@ -111,15 +112,53 @@ export default function ChurchScreen() {
       ]);
 
       setChurch(churchData);
-      setEvents(eventsData);
       setAnnouncements(announcementsData);
       setWeeklySchedule(weeklyData);
       setDonations(donationsData);
+      
+      // Load initial events
+      await loadInitialEvents(churchId);
     } catch (error) {
       console.error('Error loading church data:', error);
       Alert.alert('Error', 'Failed to load church information. The church may not exist or there may be a network issue.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInitialEvents = async (churchId: number) => {
+    try {
+      setEventsLoading(true);
+      const initialEvents = await apiService.getAllEventsPaginated(eventsLimit, 0, churchId);
+      setEvents(initialEvents);
+      setEventsOffset(eventsLimit);
+      setHasMoreEvents(initialEvents.length === eventsLimit);
+    } catch (error) {
+      console.error('Failed to load initial events:', error);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  const loadMoreEvents = async () => {
+    if (eventsLoading || !hasMoreEvents) return;
+    
+    try {
+      setEventsLoading(true);
+      const churchId = parseInt(id as string);
+      const moreEvents = await apiService.getAllEventsPaginated(eventsLimit, eventsOffset, churchId);
+      
+      if (moreEvents.length > 0) {
+        setEvents(prev => [...prev, ...moreEvents]);
+        setEventsOffset(prev => prev + eventsLimit);
+        setHasMoreEvents(moreEvents.length === eventsLimit);
+      } else {
+        setHasMoreEvents(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more events:', error);
+    } finally {
+      setEventsLoading(false);
     }
   };
 
@@ -235,6 +274,41 @@ export default function ChurchScreen() {
     });
   };
 
+
+
+  const renderEventCard = (event: Event) => (
+    <TouchableOpacity
+      key={event.id}
+      style={styles.eventCard}
+      onPress={() => handleEventPress(event.id)}
+    >
+      <View style={styles.eventDate}>
+        <Text style={styles.eventDateText}>{formatDate(event.start_datetime)}</Text>
+        <Text style={styles.eventTimeText}>{formatTime(event.start_datetime)}</Text>
+      </View>
+      <View style={styles.eventInfo}>
+        <Text style={styles.eventTitle}>{event.title}</Text>
+        {event.location && (
+          <Text style={styles.eventLocation}>{event.location}</Text>
+        )}
+        {event.price !== undefined && (
+          <Text style={styles.eventPrice}>
+            {event.price === 0 ? 'Free' : `$${event.price}`}
+          </Text>
+        )}
+      </View>
+      {event.image_url && (
+        <View style={styles.eventImageContainer}>
+          <Image 
+            source={{ uri: getImageUrl(event.image_url) }} 
+            style={styles.eventImage}
+            resizeMode="cover"
+          />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -261,7 +335,19 @@ export default function ChurchScreen() {
         <Text style={styles.headerTitle}>Church</Text>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={{ 
+          paddingBottom: 100,
+          flexGrow: 1
+        }}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+        alwaysBounceVertical={true}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={false}
+        scrollEnabled={true}
+      >
         {/* Church Banner */}
         {church.banner_url && (
           <Image source={{ uri: church.banner_url }} style={styles.bannerImage} />
@@ -382,43 +468,48 @@ export default function ChurchScreen() {
         {/* Upcoming Events */}
         {events.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming Events</Text>
-            {events.slice(0, 3).map((event) => (
-              <TouchableOpacity
-                key={event.id}
-                style={styles.eventCard}
-                onPress={() => handleEventPress(event.id)}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Upcoming Events</Text>
+              {events.length > 3 && (
+                <TouchableOpacity 
+                  style={styles.viewAllButton}
+                  onPress={() => setShowAllEvents(!showAllEvents)}
+                >
+                  <Text style={styles.viewAllButtonText}>
+                    {showAllEvents ? 'Show Less' : `View All (${events.length})`}
+                  </Text>
+                  <Ionicons 
+                    name={showAllEvents ? 'chevron-up' : 'chevron-down'} 
+                    size={16} 
+                    color="#e74c3c" 
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {/* Show events based on expansion state */}
+            {(showAllEvents ? events : events.slice(0, 3)).map(renderEventCard)}
+            
+            {/* Load More Button for expanded view */}
+            {showAllEvents && hasMoreEvents && (
+              <TouchableOpacity 
+                style={styles.loadMoreButton}
+                onPress={loadMoreEvents}
+                disabled={eventsLoading}
               >
-                <View style={styles.eventDate}>
-                  <Text style={styles.eventDateText}>{formatDate(event.start_datetime)}</Text>
-                  <Text style={styles.eventTimeText}>{formatTime(event.start_datetime)}</Text>
-                </View>
-                <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  {event.location && (
-                    <Text style={styles.eventLocation}>{event.location}</Text>
-                  )}
-                  {event.price !== undefined && (
-                    <Text style={styles.eventPrice}>
-                      {event.price === 0 ? 'Free' : `$${event.price}`}
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.reminderContentContainer}>
-                    {event.image_url && (
-                      <View style={styles.reminderImageContainer}>
-                        <Image 
-                          source={{ uri: getImageUrl(event.image_url) }} 
-                          style={styles.reminderImageSmall}
-                          resizeMode="cover"
-                        />
-                      </View>
-                    )}
+                {eventsLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Loading...</Text>
                   </View>
+                ) : (
+                  <Text style={styles.loadMoreButtonText}>Load More Events</Text>
+                )}
               </TouchableOpacity>
-            ))}
-            {events.length > 3 && (
-              <Text style={styles.moreEventsText}>+ {events.length - 3} more events</Text>
+            )}
+            
+            {/* No more events message */}
+            {showAllEvents && !hasMoreEvents && events.length > 0 && (
+              <Text style={styles.noMoreEventsText}>You're all caught up!</Text>
             )}
           </View>
         )}
@@ -640,7 +731,8 @@ export default function ChurchScreen() {
             <Text style={styles.description}>{church.description}</Text>
           </View>
         )}
-      </ScrollView>
+        
+        </ScrollView>
     </View>
   );
 }
@@ -648,7 +740,7 @@ export default function ChurchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   header: {
     backgroundColor: '#FFB800',
@@ -695,12 +787,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     resizeMode: 'cover',
+    marginBottom: 16,
   },
   churchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
     backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    // Mobile-friendly shadow alternative
+    elevation: 2,
   },
   churchAvatar: {
     width: 80,
@@ -727,7 +825,11 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: '#fff',
     marginTop: 8,
-    padding: 16,
+    padding: 20,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    // Mobile-friendly shadow alternative
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 20,
@@ -956,17 +1058,22 @@ const styles = StyleSheet.create({
   },
   eventCard: {
     flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#e74c3c',
+    // Mobile-friendly shadow alternative
+    elevation: 5,
   },
   eventDate: {
-    width: 60,
+    width: 70,
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 8,
   },
   eventDateText: {
     fontSize: 14,
@@ -1135,5 +1242,65 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 8,
     lineHeight: 16,
+  },
+  // New styles for expanding events
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e74c3c',
+    // Mobile-friendly shadow alternative
+    elevation: 2,
+  },
+  viewAllButtonText: {
+    fontSize: 14,
+    color: '#e74c3c',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+
+  eventImageContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginLeft: 12,
+    backgroundColor: '#e0e0e0',
+    overflow: 'hidden',
+  },
+  eventImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  loadMoreButton: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  loadMoreButtonText: {
+    fontSize: 14,
+    color: '#e74c3c',
+    fontWeight: '600',
+  },
+  noMoreEventsText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
   },
 });

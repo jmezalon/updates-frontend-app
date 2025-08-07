@@ -1,7 +1,8 @@
 import LikeButton from '@/components/LikeButton';
+import { Config } from '@/constants/Config';
 import { apiService, Event } from '@/services/api';
-import { setGlobalSourceEventId } from '@/utils/navigationState';
 import { getImageUrl } from '@/utils/imageUtils';
+import { setGlobalSourceEventId } from '@/utils/navigationState';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -88,7 +89,7 @@ export default function EventDetailScreen() {
     
     try {
       // For development, use localhost. In production, replace with your actual domain
-      const baseUrl = 'https://updates-backend-api-beebc8cc747c.herokuapp.com';
+      const baseUrl = Config.API.PRODUCTION_BASE_URL;
       const shareUrl = `${baseUrl}/events/${event.id}`;
       const shareMessage = `Check out this event: ${event.title}`;
       

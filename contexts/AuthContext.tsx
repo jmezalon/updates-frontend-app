@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
+import { Config } from '@/constants/Config';
+
+const API_BASE_URL = Config.API.BASE_URL;
 
 interface User {
   id: number;

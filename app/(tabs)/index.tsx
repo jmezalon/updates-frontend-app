@@ -1,17 +1,17 @@
 import { apiService, Event } from '@/services/api';
+import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { getImageUrl } from '@/utils/imageUtils';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  FlatList,
   Image,
   Modal,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +19,8 @@ import {
   View,
 } from 'react-native';
 import { calculateDistance, getCityCoordinates, getZipCodeCoordinates } from '../../utils/locationUtils';
+
+
 
 const USER_LOCATION_KEY = 'user_location';
 const FOLLOWED_CHURCHES_KEY = 'followed_churches';
@@ -41,19 +43,68 @@ export default function HomeScreen() {
   const [manualLocation, setManualLocation] = useState('');
   const [followedChurches, setFollowedChurches] = useState<number[]>([]);
   const [personalizedEvents, setPersonalizedEvents] = useState<Event[]>([]);
+  
+  // Lazy loading state
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreEvents, setHasMoreEvents] = useState(true);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [currentLimit] = useState(20);
 
-  const loadEvents = async () => {
+  const loadEvents = async (isRefresh = false) => {
     try {
-      const data = await apiService.getAllEvents();
-      setEvents(data);
-      // After loading events, create personalized feed
-      await createPersonalizedFeed(data);
+      if (isRefresh) {
+        setCurrentOffset(0);
+        setHasMoreEvents(true);
+        setEvents([]);
+        setPersonalizedEvents([]);
+      }
+      
+      const data = await apiService.getAllEventsPaginated(currentLimit, isRefresh ? 0 : currentOffset);
+      
+      if (isRefresh) {
+        setEvents(data);
+        // After loading events, create personalized feed
+        await createPersonalizedFeed(data);
+      } else {
+        setEvents(prev => [...prev, ...data]);
+        // Update personalized feed with new events
+        await createPersonalizedFeed([...events, ...data]);
+      }
+      
+      // Check if we have more events to load
+      setHasMoreEvents(data.length === currentLimit);
+      
     } catch (error) {
       console.error('Error loading announcements:', error);
       Alert.alert('Error', 'Failed to load updates. Please check if the backend server is running.');
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreEvents = async () => {
+    if (loadingMore || !hasMoreEvents) return;
+    
+    setLoadingMore(true);
+    const newOffset = currentOffset + currentLimit;
+    setCurrentOffset(newOffset);
+    
+    try {
+      const data = await apiService.getAllEventsPaginated(currentLimit, newOffset);
+      
+      if (data.length > 0) {
+        setEvents(prev => [...prev, ...data]);
+        // Update personalized feed with new events
+        await createPersonalizedFeed([...events, ...data]);
+      }
+      
+      setHasMoreEvents(data.length === currentLimit);
+    } catch (error) {
+      console.error('Error loading more events:', error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -348,7 +399,7 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    loadEvents();
+    loadEvents(true);
     loadUserLocation();
     loadFollowedChurches();
   }, []);
@@ -356,13 +407,13 @@ export default function HomeScreen() {
   // Auto-refresh events when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      loadEvents();
+      loadEvents(true);
     }, [])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadEvents();
+    loadEvents(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -447,23 +498,45 @@ export default function HomeScreen() {
         <Text style={styles.headerTitle}>Updates</Text>
       </View>
       
-      <ScrollView
-        style={styles.scrollView}
+      <FlatList
+        data={personalizedEvents.length > 0 ? personalizedEvents : events}
+        renderItem={({ item }) => renderEventCard(item)}
+        keyExtractor={(item) => item.id.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-      >
-        {events.length === 0 ? (
+        onEndReached={loadMoreEvents}
+        onEndReachedThreshold={0.1}
+        ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No events available</Text>
             <Text style={styles.emptySubtext}>
-              Make sure your backend server is running on localhost:3000
+              Make sure your backend server is running on localhost:3001
+            </Text>
+            <Text style={styles.emptySubtext}>
+              Debug: Events loaded: {events.length}, Personalized: {personalizedEvents.length}
             </Text>
           </View>
-        ) : (
-          personalizedEvents.length > 0 ? personalizedEvents.map(renderEventCard) : events.map(renderEventCard)
-        )}
-      </ScrollView>
+        }
+        ListFooterComponent={
+          <>
+            {/* Loading more indicator */}
+            {loadingMore && (
+              <View style={styles.loadingMoreContainer}>
+                <Text style={styles.loadingMoreText}>Loading more events...</Text>
+              </View>
+            )}
+            
+            {/* End of events indicator */}
+            {!hasMoreEvents && events.length > 0 && (
+              <View style={styles.endOfEventsContainer}>
+                <Text style={styles.endOfEventsText}>You're all caught up! 🎉</Text>
+              </View>
+            )}
+          </>
+        }
+        contentContainerStyle={styles.scrollView}
+      />
       
       {/* Location Setup Modal */}
       <Modal
@@ -544,13 +617,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    // Mobile-friendly shadow alternative
     elevation: 3,
   },
   cardImage: {
@@ -712,6 +779,22 @@ const styles = StyleSheet.create({
   modalSkipText: {
     textAlign: 'center',
     fontSize: 16,
+    color: '#999',
+  },
+  loadingMoreContainer: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  endOfEventsContainer: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  endOfEventsText: {
+    fontSize: 14,
     color: '#999',
   },
 });

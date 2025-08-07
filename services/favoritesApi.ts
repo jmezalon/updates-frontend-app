@@ -1,4 +1,6 @@
-const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
+import { Config } from '@/constants/Config';
+
+const API_BASE_URL = Config.API.BASE_URL;
 
 export interface FavoritesApiService {
   // Church following methods

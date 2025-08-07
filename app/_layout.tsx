@@ -24,6 +24,7 @@ export default function RootLayout() {
       <Head>
         <title>Connect with your churches on Updates</title>
         <meta name="description" content="Discover church events, follow your favorite churches, and stay connected with your community." />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />

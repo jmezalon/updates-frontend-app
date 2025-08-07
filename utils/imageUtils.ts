@@ -2,7 +2,9 @@
  * Image URL utility - Lightweight safety net for edge cases
  * Note: Backend now handles URL generation properly, this is just for safety
  */
-const PRODUCTION_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com';
+import { Config } from '@/constants/Config';
+
+const PRODUCTION_BASE_URL = Config.API.PRODUCTION_BASE_URL;
 
 /**
  * Ensures image URLs are production-ready (safety net)

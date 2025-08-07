@@ -14,7 +14,9 @@ import {
   View,
 } from 'react-native';
 
-const API_BASE_URL = 'http://https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
+import { Config } from '@/constants/Config';
+
+const API_BASE_URL = Config.API.BASE_URL;
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({

@@ -1,4 +1,6 @@
-const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
+import { Config } from '@/constants/Config';
+
+const API_BASE_URL = Config.API.BASE_URL;
 
 export interface User {
   id: number;
@@ -146,6 +148,14 @@ class ApiService {
   // Events
   async getAllEvents(): Promise<Event[]> {
     return this.fetchApi<Event[]>('/events');
+  }
+
+  async getAllEventsPaginated(limit: number = 20, offset: number = 0, churchId?: number): Promise<Event[]> {
+    let endpoint = `/events?limit=${limit}&offset=${offset}`;
+    if (churchId) {
+      endpoint += `&church_id=${churchId}`;
+    }
+    return this.fetchApi<Event[]>(endpoint);
   }
 
   async getEventById(id: number): Promise<Event> {

@@ -1,10 +1,9 @@
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
-import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +16,9 @@ import {
   View,
 } from 'react-native';
 
-const API_BASE_URL = 'https://updates-backend-api-beebc8cc747c.herokuapp.com/api';
+import { Config } from '@/constants/Config';
+
+const API_BASE_URL = Config.API.BASE_URL;
 
 interface Church {
   id: number;
@@ -74,7 +75,7 @@ function FavoritesContent() {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        console.log('Invalid date string:', dateString);
+    
         return 'No date';
       }
       return date.toLocaleDateString('en-US', {
@@ -95,7 +96,7 @@ function FavoritesContent() {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        console.log('Invalid time string:', dateString);
+    
         return 'No time';
       }
       return date.toLocaleTimeString('en-US', {
@@ -122,10 +123,7 @@ function FavoritesContent() {
 
       if (response.ok) {
         const data = await response.json();
-        // Debug: Log the first event to see its structure
-        if (data.likedEvents && data.likedEvents.length > 0) {
-          console.log('First liked event structure:', data.likedEvents[0]);
-        }
+        
         setFavorites(data);
       } else {
         console.error('Failed to fetch favorites');

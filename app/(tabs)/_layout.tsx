@@ -174,13 +174,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: '#FFB800',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    // Mobile-friendly shadow alternative
     elevation: 8,
     zIndex: 1000,
   },
