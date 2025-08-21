@@ -1,13 +1,17 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/services/api';
 import { getImageUrl } from '@/utils/imageUtils';
+import { calculateDistance, getCityCoordinates, getZipCodeCoordinates } from '@/utils/locationUtils';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +19,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+const USER_LOCATION_KEY = 'user_location';
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+  city?: string;
+  state?: string;
+  address?: string;
+}
 
 export default function ProfileScreen() {
   const { user, token, logout, updateUser } = useAuth();
@@ -25,6 +39,11 @@ export default function ProfileScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [loading, setLoading] = useState(false);
+  
+  // Location state
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [manualLocation, setManualLocation] = useState('');
 
   const handleImagePicker = async () => {
     if (!token) {
@@ -140,6 +159,202 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Failed to change password. Please check your current password.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load user location on component mount
+  useEffect(() => {
+    loadUserLocation();
+  }, []);
+
+  const loadUserLocation = async () => {
+    try {
+      const savedLocation = await AsyncStorage.getItem(USER_LOCATION_KEY);
+      if (savedLocation) {
+        setUserLocation(JSON.parse(savedLocation));
+      }
+    } catch (error) {
+      console.error('Error loading user location:', error);
+    }
+  };
+
+  const saveUserLocation = async (location: UserLocation) => {
+    try {
+      await AsyncStorage.setItem(USER_LOCATION_KEY, JSON.stringify(location));
+      setUserLocation(location);
+    } catch (error) {
+      console.error('Error saving user location:', error);
+    }
+  };
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to use GPS location.');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      return false;
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) return;
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { latitude, longitude } = location.coords;
+      
+      // Reverse geocode to get address
+      const reverseGeocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      const address = reverseGeocode[0];
+      const userLoc: UserLocation = {
+        latitude,
+        longitude,
+        city: address?.city || 'Unknown',
+        state: address?.region || 'Unknown',
+        address: `${address?.city || 'Unknown'}, ${address?.region || 'Unknown'}`,
+      };
+
+      await saveUserLocation(userLoc);
+      setShowLocationModal(false);
+      
+      Alert.alert('Success', 'Location updated successfully!');
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      Alert.alert('Error', 'Failed to get current location. Please try manual entry.');
+    }
+  };
+
+  const handleManualLocationInput = async (locationString: string) => {
+    try {
+      const trimmed = locationString.trim();
+      let userLoc: UserLocation;
+      
+      // Check if it's a zip code (5 digits or 5+4 format)
+      if (/^\d{5}(-\d{4})?$/.test(trimmed)) {
+        const zipData = getZipCodeCoordinates(trimmed);
+        if (!zipData) {
+          Alert.alert(
+            'Zip Code Not Found',
+            'This zip code is not in our database. Please try a major city zip code or use "City, State" format instead.',
+            [
+              { text: 'Try Again' },
+              { text: 'Use GPS', onPress: handleUseCurrentLocation }
+            ]
+          );
+          setShowLocationModal(false);
+          setManualLocation('');
+          return;
+        }
+        
+        userLoc = {
+          latitude: zipData.latitude,
+          longitude: zipData.longitude,
+          city: zipData.city,
+          state: zipData.state,
+          address: `${zipData.city}, ${zipData.state} ${trimmed}`,
+        };
+      } else {
+        // Parse as "City, State" format
+        const parts = trimmed.split(',').map(part => part.trim());
+        if (parts.length < 2) {
+          // Check for common abbreviations or incomplete entries
+          const suggestions = [];
+          if (trimmed.toLowerCase() === 'ny') {
+            suggestions.push('"New York, NY"', '"10001" (NYC zip code)');
+          } else if (trimmed.toLowerCase() === 'ca') {
+            suggestions.push('"Los Angeles, CA"', '"90210" (LA zip code)');
+          } else if (trimmed.toLowerCase() === 'ga') {
+            suggestions.push('"Atlanta, GA"', '"30309" (Atlanta zip code)');
+          } else if (trimmed.toLowerCase() === 'tx') {
+            suggestions.push('"Houston, TX"', '"Dallas, TX"');
+          }
+          
+          let message = 'Please enter location as:\n• "City, State" (e.g., "Atlanta, GA")\n• "City, Country" (e.g., "London, UK")\n• Zip code (e.g., "30309")';
+          
+          if (suggestions.length > 0) {
+            message += `\n\nDid you mean:\n• ${suggestions.join('\n• ')}`;
+          }
+          
+          Alert.alert(
+            'Invalid Format', 
+            message,
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+        
+        const city = parts[0];
+        const state = parts[1];
+        
+        // Use coordinate lookup for major cities worldwide
+        const cityCoordinates = getCityCoordinates(city, state);
+      
+        if (!cityCoordinates) {
+          Alert.alert(
+            'Location Not Found', 
+            `Location "${city}, ${state}" not found. Please try:\n• A major city (e.g., "Atlanta, GA", "London, UK")\n• A zip code (e.g., "30309")\n• Use GPS location instead`,
+            [
+              { text: 'Try Again' },
+              { text: 'Use GPS', onPress: handleUseCurrentLocation }
+            ]
+          );
+          setShowLocationModal(false);
+          setManualLocation('');
+          return;
+        }
+        
+        userLoc = {
+          latitude: cityCoordinates.latitude,
+          longitude: cityCoordinates.longitude,
+          city: city,
+          state: state,
+          address: `${city}, ${state}`,
+        };
+      }
+      
+      await saveUserLocation(userLoc);
+      
+      // Close modal and clear input
+      setShowLocationModal(false);
+      setManualLocation('');
+      
+      Alert.alert('Success! 🎉', `Location updated to ${userLoc.city}, ${userLoc.state}`);
+    } catch (error) {
+      Alert.alert(
+        'Error', 
+        'Failed to update location. Please try again.',
+        [
+          { text: 'Try Again' },
+          { text: 'Use GPS', onPress: handleUseCurrentLocation }
+        ]
+      );
+    }
+  };
+
+  const handleUseCurrentLocation = async () => {
+    const hasPermission = await requestLocationPermission();
+    if (hasPermission) {
+      await getCurrentLocation();
+      setShowLocationModal(false);
+    }
+  };
+
+  const handleManualLocation = async () => {
+    if (manualLocation.trim()) {
+      await handleManualLocationInput(manualLocation.trim());
     }
   };
 
@@ -351,6 +566,31 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Location Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Location Settings</Text>
+        
+        <View style={styles.locationInfo}>
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={20} color="#666" />
+            <View style={styles.locationText}>
+              <Text style={styles.locationLabel}>Current Location</Text>
+              <Text style={styles.locationValue}>
+                {userLocation ? userLocation.address : 'Not set'}
+              </Text>
+            </View>
+          </View>
+        </View>
+        
+        <TouchableOpacity 
+          onPress={() => setShowLocationModal(true)} 
+          style={styles.locationButton}
+        >
+          <Ionicons name="location" size={20} color="#e74c3c" />
+          <Text style={styles.locationButtonText}>Change Location</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Account Actions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Actions</Text>
@@ -365,6 +605,62 @@ export default function ProfileScreen() {
           <Text style={styles.deleteButtonText}>Delete Account</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Location Modal */}
+      <Modal
+        visible={showLocationModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowLocationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Your Location</Text>
+            <Text style={styles.modalSubtitle}>
+              Update your location to see nearby events in your personalized feed.
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleUseCurrentLocation}
+            >
+              <Ionicons name="location" size={20} color="#fff" />
+              <Text style={styles.modalButtonText}>Use Current Location</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.modalDivider}>
+              <Text style={styles.modalDividerText}>OR</Text>
+            </View>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder='Enter city, state or zip code (e.g., "Atlanta, GA" or "30309")'
+              value={manualLocation}
+              onChangeText={setManualLocation}
+              onSubmitEditing={handleManualLocation}
+            />
+            
+            <View style={styles.modalButtonGroup}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSecondaryButton]}
+                onPress={() => {
+                  setShowLocationModal(false);
+                  setManualLocation('');
+                }}
+              >
+                <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, { flex: 1, marginLeft: 10 }]}
+                onPress={handleManualLocation}
+              >
+                <Text style={styles.modalButtonText}>Set Location</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -527,5 +823,114 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 50,
+  },
+  locationInfo: {
+    marginBottom: 16,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  locationLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  locationValue: {
+    fontSize: 14,
+    color: '#666',
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  locationButtonText: {
+    fontSize: 16,
+    color: '#e74c3c',
+    marginLeft: 12,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalButton: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  modalSecondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    flex: 1,
+  },
+  modalSecondaryButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalDivider: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  modalDividerText: {
+    fontSize: 14,
+    color: '#999',
+    fontWeight: '600',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  modalButtonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
